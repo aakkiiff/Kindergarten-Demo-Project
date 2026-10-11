@@ -15,7 +15,6 @@ their photos. Docker Compose runs the web app and all supporting services.
 | Service | What it does and how | Why it is needed | Communicates with |
 | --- | --- | --- | --- |
 | **Frontend** | Shows the school dashboard in a web browser. It is a React app served as static files. | Gives users a place to view and manage school records and photos. | Nginx, which forwards its API requests to the right backend. |
-| **Nginx** | Acts as the front door: sends web pages to the frontend, API requests to the matching API, and photo downloads to object storage. | Gives the browser one address for the whole application. | Frontend, Student, Teacher, Employee, and Profile services; Object storage for photo downloads. |
 | **Student service** | A Go API that adds, lists, updates, and deletes student records in MongoDB. | Handles student data. | MongoDB. Browser requests reach it through Nginx. |
 | **Teacher service** | A Java/Spring API that adds, lists, updates, and deletes teacher records in MongoDB. | Handles teacher data. | MongoDB. Browser requests reach it through Nginx. |
 | **Employee service** | A Python/Flask API that adds, lists, updates, and deletes employee records in MongoDB. | Handles employee data. | MongoDB. Browser requests reach it through Nginx. |
