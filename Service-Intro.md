@@ -1,6 +1,6 @@
-# School Application
+# Kindergarten-Demo-Project
 
-A small school registry app for managing students, teachers, employees, and
+A small Kindergarten registry app for managing students, teachers, employees, and
 their photos. Docker Compose runs the web app and all supporting services.
 
 ## Table of contents
