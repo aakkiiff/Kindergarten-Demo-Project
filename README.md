@@ -1,282 +1,129 @@
+# Kindergarten Project — Run Locally
 
-# Kindergarten Project – Run Locally
+Run the frontend and APIs on your computer. Docker Compose runs MongoDB,
+RabbitMQ, RustFS, and the MongoDB dashboard.
 
-**Objective:** Run all services (Student, Teacher, Employee) and the frontend locally. Verify that the system works.
+![Kindergarten application architecture](./image.png)
 
-----------
+## Step 1: Prepare the project
 
-## **Step 1: Prepare MongoDB**
+Install Docker Compose, Node.js 22+, Go 1.23+, Python 3.13+, JDK 17, and Maven.
+Open a terminal in the repository root.
 
-1.  Decide whether to run **MongoDB locally** or via **Docker**.
-    
-2.  **Local installation:**
-    
-    -   Download the latest MongoDB from the official website.
-        
-    -   Install and start the MongoDB service.
-        
-    -   Make sure it runs on the default port `27017`.
-        
-3.  **Docker option:**
-    
-    -   Pull the latest MongoDB image.
-        
-    -   Run a MongoDB container.
-        
-    -   Ensure it is accessible on port `27017`.
-        
+Copy the example environment files:
 
-> **Goal:** other services should be able to connect to MongoDB before starting any backend.
+- in every directory there is a .env.example, make it .env for the application to read it
 
+- Set credentials in the root `.env`. Update each service's `.env` with matching
+MongoDB, RabbitMQ, and RustFS credentials where required. Keep these files
+private; do not commit credentials.
 
+## Step 2: Start the supporting services
 
+From the repository root, run:
 
-## **Step 2: Run Employee Service (Python)**
+```sh
+docker compose up -d
+docker compose ps
+```
 
-**Objective:** Start the Python backend service so the frontend can communicate with it.
+Open the MongoDB dashboard at [http://localhost:8081](http://localhost:8081).
+Sign in with `MONGO_ROOT_USERNAME` and `MONGO_ROOT_PASSWORD` from `.env`.
 
-----------
+Other consoles:
 
-### **Requirements**
+| Service | Address |
+| --- | --- |
+| RustFS | http://localhost:9001/rustfs/console/ |
+| RabbitMQ | http://localhost:15672 |
 
--   Must have **Python 3** installed on your machine.
-    
--   MongoDB should be running (from Step 1).
-    
-
-----------
-
-### **Instructions**
-
-1.  **Navigate to the Employee Service folder**
-    
-    -   Open your terminal and go to the `employeeservice` directory.
-        
-2.  **Create a virtual environment** _(only needed if running locally, not in Docker)_
-    
+Use the corresponding credentials in the root `.env`.
 
--   `python3 -m venv venv` 
-    
--   **Activate the virtual environment**
-    
-    -   **Linux/macOS:**
+Every service below runs in its own terminal. Keep each one running.
+Each service reads its own `.env` file from its folder, so always start it
+from inside that folder.
 
--   `source venv/bin/activate` 
-    
--   **Install dependencies**
-    
--   `pip install -r requirements.txt` 
-    
--   **Set required environment variables**
-    
+## Step 3: Student service (Go, port 5001)
 
-`export MONGODB_URI="mongodb://myUser:myPassword@mongo:27017/kindergarten?authSource=admin"` 
-`export DATABASE_NAME="kindergarten"` 
- 
--   **Run the Python application**
-    
+```sh
+cd studentservice
+go mod tidy
+go run main.go
+```
 
-1.  `python3 app.py` 
-    
-2.  **Verify the service is running**
-    
-    -   The terminal should show that the backend is listening on a port ( `5003`).
+Check: http://localhost:5001/students returns a list (empty is fine).
+## Step 4: Frontend (React, port 3000)
 
-       
-----------
+```sh
+cd frontend
+npm i
+npm start
+```
 
+Open [http://localhost:3000](http://localhost:3000). API addresses default to
+ports `5001`–`5004`; change them in `frontend/.env` and restart if needed.
 
+## Step 5: Teacher service (Java, port 5002)
 
-## **Step 3: Run Frontend (React)**
+Requires **JDK 17** (newer versions break the build) and Maven.
 
-**Objective:** Start the React frontend and verify that it can communicate with all backend services (Student, Teacher, Employee).
+In the teacher service terminal, point to JDK 17 and confirm it
+(repeat in every new terminal):
 
-----------
+```sh
+mvn -version    # must show: Java version: 17
+```
 
-### **Requirements**
+Build and run:
 
--   Node.js and npm installed on your machine.
-    
--   All backend services (Student, Teacher, Employee) running from previous steps.
-    
-
-----------
-
-### **Instructions**
-
-1.  **Navigate to the frontend folder**
-    
-    -   Open your terminal and go to the `frontend` directory.
-        
-2.  **Install dependencies**
-    
-
--   `npm install` 
-    
--   **Start the frontend application**
-    
-
-1.  `npm start` 
-    
-    -   This will start the frontend server, usually on `http://localhost:3000` (or Vite default port if using Vite: `5173`).
-        
-2.  **Verify communication with backend services**
-    
-    -   Open the frontend in a browser.
-        
-    -   Go to the **Employee, Teacher, and Student tabs**.
-        
-    -   Make sure the frontend is able to fetch and display data from each backend.
-        
-3.  **Check the URLs used by the frontend**
-    
-    -   Verify that the **Employee service URL** matches your local backend URL (for example, `http://localhost:5003`).
-        
-    -   If needed, adjust the frontend configuration so that it points to the correct backend URLs.
-        
-
-----------
-
-> ✅ **Checkpoint:**
-> 
-> -   Frontend loads successfully.
->     
-> -   Each tab fetches data correctly from the corresponding backend service.
->     
-> -   Green/red status indicators (if implemented) show the service health.
->     
-
-----------
-
-----------
-
-## **Step 4: Run Student Service (Go)**
-
-**Objective:** Start the Go backend for the Student service so the frontend can fetch student data.
-
-----------
-
-### **Requirements**
-
--   Latest **Go** installed on your machine.
-    
--   MongoDB running (from Step 1).
-    
-
-----------
-
-### **Instructions**
-
-1.  **Navigate to the Student Service folder**
-    
-    -   Open your terminal and go to the `studentservice` directory.
-        
-2.  **Install dependencies**
-    
-
--   `go mod tidy` 
-    
-    -   This will download and install all required Go modules.
-        
--   **Set required environment variables**
-    
-
--   `export MONGODB_URI="mongodb://myUser:myPassword@172.22.0.2:27017/kindergarten?authSource=admin"`
--   `export DATABASE_NAME="kindergarten"` 
-    
--   **Run the Go application**
-    
-
--   `go run main.go` 
-    
-    -   The backend should start and listen on a port ( `5001`).
-        
--   **Verify service availability**
-    
-    -   Open the frontend in a browser.
-        
-    -   Go to the **Student tab**.
-        
-    -   Confirm that the frontend can fetch and display student data.
-
-## **Step 5: Run Teacher Service (Java)**
-
-**Objective:** Start the Java backend for the Teacher service so the frontend can fetch teacher data.
-
-----------
-
-### **Requirements**
-
--   Java (OpenJDK 17) installed.
-    
--   Maven installed.
-    
--   MongoDB running (from Step 1).
-    
-
-----------
-
-### **Instructions**
-
-1.  **Update system packages**
-    
-
--   `sudo apt update` 
-    
--   **Install Java runtime**
-    
-
--   `sudo apt install openjdk-17-jre`
--   `java -version` 
-    
-    -   Ensure Java 17 or higher is installed.
-        
--   **Install Maven**
-    
-
--   `sudo apt install maven` 
-    
--   **Navigate to the Teacher Service folder**
-    
-    -   Open your terminal and go to the `teacherservice` directory.
-        
--   **Build the project using Maven**
-    
-
--   `mvn clean package` 
-    
-    -   This will create a `.jar` file in the `target` folder.
-        
--   **Run the Java application**
-    
--   **Set required environment variables**
-    
-
--   `export MONGODB_URI="mongodb://myUser:myPassword@172.22.0.2:27017/kindergarten?authSource=admin"`
--   `export DATABASE_NAME="kindergarten"` 
-
-1.  `java -jar target/<jar-file-name>.jar` 
-    
-    -   Replace `<jar-file-name>` with the actual name of the `.jar` generated by Maven.
-        
-    -   The backend should start and listen on a port ( `5002`).
-        
-2.  **Verify service availability**
-    
-    -   Open the frontend in a browser.
-        
-    -   Go to the **Teacher tab**.
-        
-    -   Confirm that the frontend can fetch and display teacher data.
-        
-
-----------
-
-> ✅ **Checkpoint:**
-> 
-> -   Teacher service runs successfully.
->     
-> -   Frontend is able to communicate with the Teacher backend using the correct URL.
->     
-
-----------
+```sh
+cd teacherservice
+mvn clean package
+java -jar target/teacherservice-1.0.0.jar
+```
+
+The first start downloads dependencies and can take a few minutes.
+Check: http://localhost:5002/teachers returns a list.
+
+## Step 6: Employee service (Python, port 5003)
+
+```sh
+cd employeeservice
+pip install -r requirements.txt
+python app.py
+```
+
+Check: http://localhost:5003/employees returns a list.
+
+## Step 7: Profile (media) service (Node.js, port 5004)
+
+Uploads photos to RustFS and queues thumbnail jobs in RabbitMQ.
+
+```sh
+cd profileservice
+npm i
+npm start
+```
+
+Check: http://localhost:5004/ready reports ready.
+
+## Step 8: Thumbnail worker (Python)
+
+Start it after the profile service. It turns uploaded photos into thumbnails.
+
+```sh
+cd thumbnailworker
+
+pip install -r requirements.txt
+python worker.py
+```
+
+Check: the terminal shows it is waiting for messages.
+
+
+## Step 9: Verify everything
+
+- The footer shows **3 of 3 services connected**.
+- The Students, Teachers, and Employees tabs load and accept new records.
+- A record with a photo shows **Processing**, then a thumbnail.
+- The MongoDB dashboard shows the new records in the `kindergarten` database.

@@ -1,0 +1,158 @@
+
+services:
+
+  mongo:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: kindergarten
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_ROOT_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    ports:
+      - "8081:8081"
+
+  
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  
+  object-storage:
+    image: rustfs/rustfs:1.0.1
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      RUSTFS_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY}
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_VOLUMES: /data
+    volumes:
+      - object-storage-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  nginx:
+    image: nginx:alpine
+    container_name: kindergarten-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - studentservice
+      - teacherservice
+      - employeeservice
+      - profileservice
+    restart: unless-stopped
+
+  studentservice:
+    build: ./studentservice
+    env_file:
+      - ./studentservice/.env
+    ports:
+      - "5001:5001"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+ 
+  employeeservice:
+    build: ./employeeservice
+    env_file:
+      - ./employeeservice/.env
+    ports:
+      - "5003:5003"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  
+  teacherservice:
+    build: ./teacherservice
+    env_file:
+      - ./teacherservice/.env
+    ports:
+      - "5002:5002"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+
+  profileservice:
+    build: ./profileservice
+    env_file:
+      - ./profileservice/.env
+    ports:
+      - "5004:5004"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  
+  thumbnailworker:
+    build: ./thumbnailworker
+    env_file:
+      - ./thumbnailworker/.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      object-storage:
+        condition: service_healthy
+    restart: unless-stopped
+
+  
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+
+volumes:
+  mongo-data:
+  object-storage-data:
+  rabbitmq-data:
