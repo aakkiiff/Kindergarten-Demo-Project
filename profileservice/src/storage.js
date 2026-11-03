@@ -13,7 +13,14 @@ function createS3Client(config) {
   });
 }
 
-function createStorage({ s3, bucket, thumbnailBucket, publicPath, urlTtlSeconds, presign = getSignedUrl }) {
+function createStorage({
+  s3,
+  publicS3 = s3,
+  bucket,
+  thumbnailBucket,
+  urlTtlSeconds,
+  presign = getSignedUrl
+}) {
   return {
     async ensureBuckets() {
       for (const name of [bucket, thumbnailBucket]) {
@@ -30,11 +37,12 @@ function createStorage({ s3, bucket, thumbnailBucket, publicPath, urlTtlSeconds,
       await s3.send(new HeadBucketCommand({ Bucket: thumbnailBucket }));
     },
     async thumbnailUrl(key) {
-      const signed = new URL(await presign(s3,
-        new GetObjectCommand({ Bucket: thumbnailBucket, Key: key }), { expiresIn: urlTtlSeconds }));
-      // Local browsers reach S3 directly; keep the signed host and path unchanged.
-      return publicPath ? `${publicPath}${signed.pathname}${signed.search}` : signed.href;
-    },
+  return presign(
+    publicS3,
+    new GetObjectCommand({ Bucket: thumbnailBucket, Key: key }),
+    { expiresIn: urlTtlSeconds }
+  );
+},
     async putImage(key, buffer, contentType) {
       await s3.send(new PutObjectCommand({
         Bucket: bucket, Key: key, Body: buffer, ContentType: contentType,

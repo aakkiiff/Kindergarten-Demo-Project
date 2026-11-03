@@ -1,4 +1,6 @@
+
 services:
+
   mongo:
     image: mongo:7
     container_name: mongodb
@@ -28,6 +30,7 @@ services:
     ports:
       - "8081:8081"
 
+  
   rabbitmq:
     image: rabbitmq:4.1-management-alpine
     environment:
@@ -45,6 +48,7 @@ services:
       retries: 10
       start_period: 20s
 
+  
   object-storage:
     image: rustfs/rustfs:1.0.1
     ports:
@@ -63,6 +67,77 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+
+  
+
+  studentservice:
+    build: ./studentservice
+    env_file:
+      - ./studentservice/.env
+    ports:
+      - "5001:5001"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+ 
+  employeeservice:
+    build: ./employeeservice
+    env_file:
+      - ./employeeservice/.env
+    ports:
+      - "5003:5003"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  
+  teacherservice:
+    build: ./teacherservice
+    env_file:
+      - ./teacherservice/.env
+    ports:
+      - "5002:5002"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+
+  profileservice:
+    build: ./profileservice
+    env_file:
+      - ./profileservice/.env
+    ports:
+      - "5004:5004"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  
+  thumbnailworker:
+    build: ./thumbnailworker
+    env_file:
+      - ./thumbnailworker/.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      object-storage:
+        condition: service_healthy
+    restart: unless-stopped
+
+  
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
 
 volumes:
   mongo-data:

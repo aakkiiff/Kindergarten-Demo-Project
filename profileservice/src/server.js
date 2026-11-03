@@ -26,7 +26,13 @@ async function main() {
   await mongo.connect();
   const db = mongo.db(process.env.DATABASE_NAME || "kindergarten");
   const s3 = createS3Client(config);
-  const storage = createStorage({ s3, ...config });
+
+const publicS3 = createS3Client({
+  ...config,
+  endpoint: process.env.S3_PUBLIC_ENDPOINT || config.endpoint,
+});
+
+const storage = createStorage({ s3, publicS3, ...config });
   await storage.ensureBuckets();
   const media = createMedia({ db, storage });
 
@@ -85,7 +91,7 @@ async function main() {
     server.close(async () => {
       try {
         if (publisher) await publisher.connection.close();
-        await mongo.close(); s3.destroy();
+        await mongo.close(); s3.destroy(); publicS3.destroy();
         logger.info("service_stopped");
         process.exit(0);
       } catch (error) {

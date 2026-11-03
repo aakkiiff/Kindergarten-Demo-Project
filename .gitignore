@@ -53,3 +53,15 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# Environment files
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
