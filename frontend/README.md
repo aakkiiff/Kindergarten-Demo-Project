@@ -23,7 +23,7 @@ npm ci
 npm start
 ```
 
-This branch connects directly to locally running APIs (no reverse proxy):
+Manual development connects directly to locally running APIs:
 
 | Directory | API base |
 | --- | --- |
@@ -32,14 +32,23 @@ This branch connects directly to locally running APIs (no reverse proxy):
 | Employees | `http://localhost:5003` |
 | Profile photo | `http://localhost:5004` |
 
-`npm start` serves the frontend on http://localhost:3000. Compose runs only
-MongoDB/RabbitMQ/RustFS; start all APIs and the worker using the root
-[local launcher](../scripts/run-local.sh). Thumbnails use signed URLs directly to
-http://localhost:9000. The media API allows `FRONTEND_ORIGIN` from the root `.env`.
+`npm start` serves the frontend on http://localhost:3000. Follow the manual
+service-by-service steps in the [root README](../READEME.md).
+Local thumbnails use signed URLs directly to http://localhost:9000.
+The media API reads `FRONTEND_ORIGIN` from `profileservice/.env`.
+
+For the full container stack, run `docker compose up -d --build --wait` from the
+repository root and open http://localhost:3000. The frontend image calls the
+APIs directly on `http://localhost:5001`-`5004`, using the build-time bases in
+`.env.production`. Thumbnails are signed URLs served directly by RustFS on
+http://localhost:9000. Docker excludes local `.env` files but includes
+`.env.production`, which contains only public browser addresses.
 
 Optional build-time overrides: `REACT_APP_STUDENT_API_URL`,
 `REACT_APP_TEACHER_API_URL`, `REACT_APP_EMPLOYEE_API_URL`, and
-`REACT_APP_PROFILE_API_URL`. These are browser addresses, not Docker hostnames.
+`REACT_APP_PROFILE_API_URL`. Edit `.env.production` for container builds or
+`.env` for local development. Rebuild the image after changing production
+settings. These are public browser addresses, not Docker hostnames or secrets.
 
 ## Validation
 
