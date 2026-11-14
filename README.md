@@ -55,6 +55,10 @@ Backend structured logs and request IDs are unchanged. Nginx errors use native
 stderr output. After recreating application containers, run
 `docker compose restart nginx` so it resolves their new addresses.
 
+The `/media/` proxy must preserve `Host: object-storage:9000`, including the
+port. Using the upstream alias without the port invalidates S3 thumbnail
+signatures and returns HTTP 403.
+
 Do not run `docker compose down -v` unless you intend to delete stored data.
 This is a local teaching demo, not a production deployment.
 
