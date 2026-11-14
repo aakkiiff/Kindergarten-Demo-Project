@@ -34,8 +34,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -50,7 +50,6 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-      - 5004:5004
     environment:
       RUSTFS_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY}
       RUSTFS_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY}
@@ -67,8 +66,6 @@ services:
 
   studentservice:
     build: ./studentservice
-    ports:
-      - "5001:5001"
     environment:
       MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/kindergarten?authSource=admin
       DATABASE_NAME: kindergarten
@@ -76,8 +73,6 @@ services:
 
   teacherservice:
     build: ./teacherservice
-    ports:
-      - "5002:5002"
     environment:
       MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/kindergarten?authSource=admin
       DATABASE_NAME: kindergarten
@@ -85,8 +80,6 @@ services:
 
   employeeservice:
     build: ./employeeservice
-    ports:
-      - "5003:5003"
     environment:
       MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/kindergarten?authSource=admin
       DATABASE_NAME: kindergarten
@@ -94,18 +87,19 @@ services:
 
   profileservice:
     build: ./profileservice
-    network_mode: "service:object-storage"
     environment:
       MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/kindergarten?authSource=admin
       DATABASE_NAME: kindergarten
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      S3_ENDPOINT: http://localhost:9000
+      S3_ENDPOINT: http://object-storage:9000
       S3_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY}
       S3_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY}
       S3_BUCKET: school-media
       S3_THUMBNAIL_BUCKET: school-thumbnails
-      FRONTEND_ORIGIN: http://localhost:3000
+      FRONTEND_ORIGIN: http://localhost:8080
 
+      S3_PUBLIC_PATH: /media
+    restart: always
 
   thumbnailworker:
     build: ./thumbnailworker
@@ -118,13 +112,16 @@ services:
       S3_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY}
       S3_BUCKET: school-media
       S3_THUMBNAIL_BUCKET: school-thumbnails
-
+    restart: always
 
   frontend:
     build: ./frontend
-    ports:
-      - "3000:80"
+    restart: always
 
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:80"
 volumes:
   mongo-data:
   object-storage-data:
