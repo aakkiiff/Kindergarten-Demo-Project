@@ -38,11 +38,11 @@ Local thumbnails use signed URLs directly to http://localhost:9000.
 The media API reads `FRONTEND_ORIGIN` from `profileservice/.env`.
 
 For the full container stack, run `docker compose up -d --build --wait` from the
-repository root and open http://localhost:3000. The frontend image calls the
-APIs directly on `http://localhost:5001`-`5004`, using the build-time bases in
-`.env.production`. Thumbnails are signed URLs served directly by RustFS on
-http://localhost:9000. Docker excludes local `.env` files but includes
-`.env.production`, which contains only public browser addresses.
+repository root and open http://localhost:8080. The frontend image uses
+`/api/students`, `/api/teachers`, `/api/employees`, and `/api/profile` as its
+build-time API bases from `.env.production`. Nginx proxies these and signed
+`/media/` downloads. Docker excludes local `.env` files but includes
+`.env.production`, which contains only public API paths.
 
 Optional build-time overrides: `REACT_APP_STUDENT_API_URL`,
 `REACT_APP_TEACHER_API_URL`, `REACT_APP_EMPLOYEE_API_URL`, and
